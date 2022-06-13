@@ -1,0 +1,17 @@
+[alias]
+  lg = log --graph --abbrev-commit --date=relative --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
+	d = difftool
+[core]
+	editor = vim
+	excludesFile = ~/.gitignore
+[init]
+	defaultBranch = main
+[diff]
+	tool = vimdiff
+[merge]
+	conflictStyle = diff3
+[user]
+	name = taehyung
+	email = taehyungkfr@gmail.com
+[url "git@bitbucket.org:"]
+  insteadOf = https://bitbucket.org/
