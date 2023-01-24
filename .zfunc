@@ -1,0 +1,198 @@
+#!/usr/bin/env sh
+
+#############################################################################
+# Common
+#############################################################################
+gc-swp() {
+  local dirs
+  dir="$HOME/pjts"
+  if [[ $# > 0 ]]; then
+    dir=$1
+  fi
+  echo gc dir: $dir
+  find $dir -type f -name '*.swp' -delete
+}
+
+fpre() {
+  fzf --preview 'bat --style=numbers --color=always {} | head -500'
+}
+
+y-music() {
+  youtube-dl -x --audio-format flac --audio-quality 0 -o '%(title)s.%(ext)s' ${@:1}
+}
+
+go-download() {
+  local os arch ver
+  os=$1
+  arch=$2
+  ver=$3
+
+  wget -O /tmp/go$ver.tar.gz https://dl.google.com/go/go$ver.$os-$arch.tar.gz
+  tar -xvf /tmp/go$ver.tar.gz -C /tmp
+  sudo mv /tmp/go /usr/local/go-$ver
+}
+
+go-switch() {
+  if [[ ! -d /usr/local/go-$1 ]]; then
+    echo "not found version : $1"
+    go-download -h
+    return -1
+  fi
+
+  sudo ln -sfn /usr/local/go-$1 /usr/local/go
+}
+
+
+#############################################################################
+# XFCE4
+#############################################################################
+xf-dpi() {
+  xfconf-query -c xsettings -p /Xft/DPI -s $1
+}
+
+xf-presentation-toggle() {
+  xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/presentation-mode -T
+}
+
+xf-switch-monitor() {
+  if [[ "$1" == "dell" ]]; then
+    xfconf-query -c xsettings -p /Xft/DPI -s -1
+    emacsclient -e '(my/set-font "D2Coding" 30)'
+    /usr/bin/setxkbmap -option 'ctrl:swapcaps'
+  else
+    xfconf-query -c xsettings -p /Xft/DPI -s 126
+    emacsclient -e '(my/set-font "D2Coding" 38)'
+  fi
+}
+
+#############################################################################
+# Kubernetes
+#############################################################################
+ktoken-old() {
+  if [[ $# != 2 ]]; then
+    echo "Usage: $(basename "$0") namespace serviceAccount (~ k8s v1.23)"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") default default"
+    echo "  $(basename "$0") kube-system ttl-controller"
+    return -1
+  fi
+  local name
+  name=$(kubectl -n $1 get sa $2 -o jsonpath='{.secrets[0].name}')
+  kubectl -n $1 get secret $name -o go-template='{{.data.token|base64decode}}'
+}
+
+ktoken() {
+  if [[ $# != 2 ]]; then
+    echo "Usage: $(basename "$0") namespace serviceAccount"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") default default"
+    echo "  $(basename "$0") kube-system ttl-controller"
+    return -1
+  fi
+  kubectl -n $1 create token $2
+}
+
+ksecret() {
+  if [[ $# != 2 || $1 =~ ^(-h|--help)$  ]]; then
+    echo "Usage: $(basename "$0") namespace name"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") default test-cred"
+    echo "  $(basename "$0") kube-system secret"
+    return -1
+  fi
+
+  # https://github.com/kubernetes/kubernetes/issues/45293
+  kubectl get secret -n $1 $2 \
+          -o go-template='
+{{- range $k,$v := .data}}
+{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v|base64decode}}{{end}}
+{{- end}}'
+}
+
+klog() {
+  if [[ $# < 2 ]]; then
+    echo "Usage: $(basename "$0") namespace selector [KUBECTL OPTIONS]"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") default app=nginx"
+    echo "  $(basename "$0") kube-system component=kube-scheduler -f"
+    return -1
+  fi
+  local name
+  name=$(kubectl -n $1 get po -l $2 -o jsonpath="{.items[0].metadata.name}")
+
+  kubectl -n $1 logs $name ${@:3}
+}
+
+kexec() {
+  if [[ $# < 2 ]]; then
+    echo "Usage: $(basename "$0") namespace selector script(default: sh)"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") default app=nginx"
+    echo "  $(basename "$0") kube-system component=kube-scheduler bash"
+    return -1
+  fi
+  local name script
+  name=$(kubectl -n $1 get po -l $2 -o jsonpath="{.items[0].metadata.name}")
+  script=sh
+  if [[ ! -z "$3" ]]; then
+    script=$3
+  fi
+
+  kubectl -n $1 exec -it $name -- $script
+}
+
+ksacontext() {
+  if [[ $# != 2 ]]; then
+    echo "Usage: $(basename "$0") namespace serviceAccount"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") default default"
+    echo "  $(basename "$0") kube-system ttl-controller"
+    return -1
+  fi
+  local ns sa token ctx c
+  ns=$1
+  sa=$2
+  token=$(ktoken $ns $sa)
+  ctx=$(kubectl config current-context)
+  c=$(kubectl config view -o jsonpath="{.contexts[?(@.name== '$ctx')].context.cluster}")
+
+  kubectl config set-credentials $sa --token=$token
+  kubectl config set-context $sa-context --cluster=$c --user=$sa
+  kubectl config use-context $sa-context
+}
+
+kdownload() {
+  if [[ $# != 2 ]]; then
+    echo "Usage: $(basename "$0") user server"
+    echo "remote kubeconfig download"
+    echo
+    echo "Examples:"
+    echo "  $(basename "$0") root 10.20.200.201"
+    echo "  $(basename "$0") admin 10.20.200.201"
+    return -1
+  fi
+  local user server cfg
+  user=$1
+  server=$2
+  cfg=~/.kube/config-$server
+  echo "[INFO] $server download kubeconfig..."
+  scp $user@$server:~/.kube/config $cfg
+  if [[ ! -f $cfg ]]; then
+    echo "server kubeconfig not exist"
+    return -1
+  fi
+
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/kubernetes-admin/$server-user/g" $cfg
+    sed -i '' "s/kubernetes$/c-$server/g" $cfg
+  else
+    sed -i "s/kubernetes-admin/$server-user/g" $cfg
+    sed -i "s/kubernetes$/c-$server/g" $cfg
+  fi
+}

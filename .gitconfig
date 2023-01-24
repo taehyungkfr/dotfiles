@@ -1,17 +1,22 @@
 [alias]
   lg = log --graph --abbrev-commit --date=relative --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
-	d = difftool
+  d = difftool
 [core]
-	editor = vim
-	excludesFile = ~/.gitignore
+  editor = vim
+  excludesFile = ~/.gitignore
 [init]
-	defaultBranch = main
+  defaultBranch = main
 [diff]
-	tool = vimdiff
+  tool = vimdiff
 [merge]
-	conflictStyle = diff3
+  conflictStyle = diff3
 [user]
-	name = taehyung
-	email = taehyungkfr@gmail.com
+  name = taehyung
+  email = taehyungkfr@gmail.com
+  signingkey = 6BB5642FCD7C87D0
 [url "git@bitbucket.org:"]
   insteadOf = https://bitbucket.org/
+[url "git@github.com:"]
+  insteadOf = https://github.com/
+[includeIf "gitdir:~/pjts/acc2/"]
+  path = ~/pjts/acc2/.gitconfig
