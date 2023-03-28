@@ -16,6 +16,7 @@ Plug 'habamax/vim-asciidoctor'
 Plug 'jceb/vim-orgmode'
 Plug 'tpope/vim-speeddating'
 Plug 'tenfyzhong/tagbar-makefile.vim'
+
 call plug#end()
 
 syntax on
@@ -67,7 +68,7 @@ if has('gui_running')
   endif
 endif
 
-colorscheme habamax
+colorscheme zenburn
 
 "https://github.com/vim/vim/issues/3608
 let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
