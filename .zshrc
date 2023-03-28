@@ -26,7 +26,6 @@ export TMPDIR=/tmp
 export GOPATH="$HOME/go"
 export MANPAGER="less -R --use-color -Dd+r -Du+b"
 export EDITOR=vim
-export SYSTEMD_EDITOR=vim
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   # export GDK_SCALE=2
@@ -49,13 +48,15 @@ fi
 
 if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
   export EDITOR=emacsclient
-  export GIT_EDITOR=emacsclient
-  export KUBE_EDITOR=emacsclient
 fi
+
+export GIT_EDITOR=$EDITOR
+export KUBE_EDITOR=$EDITOR
+export SYSTEMD_EDITOR=vim
 
 export GPG_TTY=$(tty)
 export FZF_DEFAULT_COMMAND="rg --files --hidden -g '!vendor/' -g '!.git/'"
-export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin:${KREW_ROOT:-$HOME/.krew}/bin
 
 ##############################################################################
 # Extension
