@@ -12,6 +12,7 @@ Plug 'yggdroot/indentline'
 Plug 'bronson/vim-trailing-whitespace'
 Plug 'vim-scripts/AnsiEsc.vim'
 Plug 'jnurmine/Zenburn'
+Plug 'joshdick/onedark.vim'
 Plug 'habamax/vim-asciidoctor'
 Plug 'jceb/vim-orgmode'
 Plug 'tpope/vim-speeddating'
@@ -68,7 +69,7 @@ if has('gui_running')
   endif
 endif
 
-colorscheme zenburn
+colorscheme onedark
 
 "https://github.com/vim/vim/issues/3608
 let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"

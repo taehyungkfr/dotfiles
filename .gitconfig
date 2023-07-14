@@ -9,7 +9,7 @@
 [diff]
   tool = vimdiff
 [merge]
-  conflictStyle = diff3
+	conflictStyle = diff3
 [user]
   name = taehyung
   email = taehyungkfr@gmail.com

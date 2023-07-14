@@ -6,6 +6,15 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 source $ZSH/oh-my-zsh.sh
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
+setopt EXTENDED_HISTORY
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_BEEP
+
 ##############################################################################
 # Alias
 ##############################################################################
@@ -16,7 +25,7 @@ alias grep='grep --color=auto --exclude-dir={.bzr,.git,.hg,.svn,.idea,.tox}'
 alias fgrep='fgrep --color=auto --exclude-dir={.bzr,.git,.hg,.svn,.idea,.tox}'
 alias egrep='egrep --color=auto --exclude-dir={.bzr,.git,.hg,.svn,.idea,.tox}'
 alias k='kubectl'
-alias p='sudo podman'
+alias p='podman'
 
 
 ##############################################################################
@@ -31,10 +40,12 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   # export GDK_SCALE=2
   # export GDK_DPI_SCALE=2
 
-  # ibus
-  export GTK_IM_MODULE=ibus
-  export XMODIFIERS=@im=ibus
-  export QT_IM_MODULE=ibus
+  # fcitx
+  export GTK_IM_MODULE=fcitx
+  export QT_IM_MODULE=fcitx
+  export XMODIFIERS=@im=fcitx
+
+  export LC_CTYPE=ko_KR.UTF-8
 
   export GOROOT="/usr/local/go"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -65,4 +76,5 @@ export PATH=$PATH:$GOROOT/bin:$GOPATH/bin:${KREW_ROOT:-$HOME/.krew}/bin
 [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 [[ -f ~/.zfunc ]] && source ~/.zfunc
 [[ -f /usr/local/bin/kubectl ]] && source <(kubectl completion zsh)
+[[ -f /usr/local/bin/minikube ]] && source <(minikube completion zsh)
 [[ -f /usr/share/nvm/init-nvm.sh ]] && source /usr/share/nvm/init-nvm.sh

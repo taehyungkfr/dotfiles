@@ -3,7 +3,32 @@
 #############################################################################
 # Common
 #############################################################################
-gc-swp() {
+vterm_printf() {
+    if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ]); then
+        # Tell tmux to pass the escape sequences through
+        printf "\ePtmux;\e\e]%s\007\e\\" "$1"
+    elif [ "${TERM%%-*}" = "screen" ]; then
+        # GNU screen (screen, screen-256color, screen-256color-bce)
+        printf "\eP\e]%s\007\e\\" "$1"
+    else
+        printf "\e]%s\e\\" "$1"
+    fi
+}
+
+if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
+    alias clear='vterm_printf "51;Evterm-clear-scrollback";tput clear'
+fi
+
+my/vpn() {
+  sudo openfortivpn 219.240.75.39:10443 \
+       --insecure-ssl \
+       --cookie-on-stdin \
+       --use-resolvconf=0 \
+       --trusted-cert 6c76e581887f711e76c7f856af9d9b89aec32a6229e7d9b794fd57317d32c0f7 \
+       --trusted-cert 6c76e581887f711e76c7f856af9d9b89aec32a6229e7d9b794fd57317d32c0f7
+}
+
+my/gc-swp() {
   local dirs
   dir="$HOME/pjts"
   if [[ $# > 0 ]]; then
@@ -13,15 +38,15 @@ gc-swp() {
   find $dir -type f -name '*.swp' -delete
 }
 
-fpre() {
+my/fpre() {
   fzf --preview 'bat --style=numbers --color=always {} | head -500'
 }
 
-y-music() {
+my/music() {
   yt-dlp -x --audio-format flac --audio-quality 0 -o '%(title)s.%(ext)s' ${@:1}
 }
 
-go-download() {
+my/go-download() {
   local os arch ver
   os=$1
   arch=$2
@@ -32,7 +57,7 @@ go-download() {
   sudo mv /tmp/go /usr/local/go-$ver
 }
 
-go-switch() {
+my/go-switch() {
   if [[ ! -d /usr/local/go-$1 ]]; then
     echo "not found version : $1"
     go-download -h
@@ -46,19 +71,19 @@ go-switch() {
 #############################################################################
 # XFCE4
 #############################################################################
-xf-dpi() {
+my/xf-dpi() {
   xfconf-query -c xsettings -p /Xft/DPI -s $1
 }
 
-xf-presentation-toggle() {
+my/xf-presentation-toggle() {
   xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/presentation-mode -T
 }
 
-xf-switch-monitor() {
+my/xf-switch-monitor() {
   if [[ "$1" == "dell" ]]; then
     xfconf-query -c xsettings -p /Xft/DPI -s -1
-    emacsclient -e '(my/set-font "D2Coding" 30)'
     /usr/bin/setxkbmap -option 'ctrl:swapcaps'
+    emacsclient -e '(my/set-font "D2Coding" 30)'
   else
     xfconf-query -c xsettings -p /Xft/DPI -s 126
     emacsclient -e '(my/set-font "D2Coding" 38)'
@@ -68,7 +93,7 @@ xf-switch-monitor() {
 #############################################################################
 # Kubernetes
 #############################################################################
-ktoken-old() {
+my/ktoken-old() {
   if [[ $# != 2 ]]; then
     echo "Usage: $(basename "$0") namespace serviceAccount (~ k8s v1.23)"
     echo
@@ -82,7 +107,7 @@ ktoken-old() {
   kubectl -n $1 get secret $name -o go-template='{{.data.token|base64decode}}'
 }
 
-ktoken() {
+my/ktoken() {
   if [[ $# != 2 ]]; then
     echo "Usage: $(basename "$0") namespace serviceAccount"
     echo
@@ -94,7 +119,7 @@ ktoken() {
   kubectl -n $1 create token $2
 }
 
-ksecret() {
+my/ksecret() {
   if [[ $# != 2 || $1 =~ ^(-h|--help)$  ]]; then
     echo "Usage: $(basename "$0") namespace name"
     echo
@@ -112,7 +137,7 @@ ksecret() {
 {{- end}}'
 }
 
-klog() {
+my/klog() {
   if [[ $# < 2 ]]; then
     echo "Usage: $(basename "$0") namespace selector [KUBECTL OPTIONS]"
     echo
@@ -127,7 +152,7 @@ klog() {
   kubectl -n $1 logs $name ${@:3}
 }
 
-kexec() {
+my/kexec() {
   if [[ $# < 2 ]]; then
     echo "Usage: $(basename "$0") namespace selector script(default: sh)"
     echo
@@ -146,7 +171,7 @@ kexec() {
   kubectl -n $1 exec -it $name -- $script
 }
 
-ksacontext() {
+my/ksacontext() {
   if [[ $# != 2 ]]; then
     echo "Usage: $(basename "$0") namespace serviceAccount"
     echo
@@ -167,7 +192,7 @@ ksacontext() {
   kubectl config use-context $sa-context
 }
 
-kdownload() {
+my/kdownload() {
   if [[ $# != 2 ]]; then
     echo "Usage: $(basename "$0") user server"
     echo "remote kubeconfig download"
